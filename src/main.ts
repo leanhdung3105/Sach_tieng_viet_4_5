@@ -14,8 +14,8 @@ declare global {
 // --- CẤU HÌNH GAME (Theo cấu trúc mẫu: FIT) ---
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
-    width: 1280,
-    height: 720,
+    width: 1920,
+    height: 1080,
     parent: 'game-container',
     scene: [GameScene, EndGameScene],
     backgroundColor: '#ffffff',
@@ -28,8 +28,6 @@ const config: Phaser.Types.Core.GameConfig = {
         arcade: { debug: false }
     },
     render: {
-        pixelArt: false,
-        antialias: true,
         transparent: true,
     },
 };
@@ -44,8 +42,8 @@ function updateUIButtonScale() {
     const w = window.innerWidth;
     const h = window.innerHeight;
 
-    const scale = Math.min(w, h) / 720; 
-    const baseSize = 80;
+    const scale = Math.min(w, h) / 1080; 
+    const baseSize = 100;
     const newSize = baseSize * scale;
 
     resetBtn.style.width = `${newSize}px`;

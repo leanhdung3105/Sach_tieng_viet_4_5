@@ -160,7 +160,7 @@ export default class GameScene extends Phaser.Scene {
 
     private createScoreBar() {
 
-        const barX = this.pctX(0.12);
+        const barX = this.pctX(0.12); 
         const barY = this.pctY(0.9);
 
         
@@ -191,11 +191,9 @@ export default class GameScene extends Phaser.Scene {
         this.popupContainer = this.add.container(this.getW() / 2, this.getH() / 2).setDepth(1000).setVisible(false);
 
         const bg = this.add.image(0, 0, 'board').setName('popup_board');
-        //const scale = (this.getW() * 0.4) / bg.width; 
-        bg.setScale(0.7);
         
-        const icon = this.add.image(0, -50 * (this.getW() * 0.4) / bg.width, 'item_grape').setName('popup_icon');
-        const textImg = this.add.image(0, bg.displayHeight * 0.2, 'text_grape').setName('popup_text_img');
+        const icon = this.add.image(0, -bg.displayHeight * 15, 'item_grape').setName('popup_icon');
+        const textImg = this.add.image(0, bg.displayHeight * 0.22, 'text_grape').setName('popup_text_img');
 
         this.popupContainer.add([bg, icon, textImg]);
     }
@@ -345,7 +343,7 @@ export default class GameScene extends Phaser.Scene {
         const baseSize = this.getH() * 0.18; 
 
         const balloon = this.add.sprite(0, 0, balloonKey);
-        balloon.setScale(0.45).setInteractive({ useHandCursor: true });
+        balloon.setScale(0.65).setInteractive({ useHandCursor: true });
         container.add(balloon);
 
         //CHỈ THÊM HÌNH NẾU KHÔNG PHẢI LÀ BÓNG RỖNG
@@ -402,18 +400,12 @@ export default class GameScene extends Phaser.Scene {
             const textImg = this.popupContainer.getByName('popup_text_img') as Phaser.GameObjects.Image;
 
             if (bg && icon && textImg) {
-                icon.setTexture(`item_${data.id}`).setScale(1);
+                icon.setTexture(`item_${data.id}`).setScale(0.8);
                 icon.y = -bg.displayHeight * 0.15;
     
                 textImg.setTexture(`text_${data.id}`);
                 const maxTextWidth = bg.displayWidth * 0.6;
-                if (textImg.width > maxTextWidth) {
-                    textImg.setScale(1);
-                    if (icon.texture.key === 'item_volleyball') textImg.setScale(0.8);
-                }
-                    
-                
-                textImg.y = bg.displayHeight * 0.2; 
+                textImg.y = bg.displayHeight * 0.22; 
             }
         }
 
@@ -421,7 +413,7 @@ export default class GameScene extends Phaser.Scene {
         this.tweens.add({ targets: this.popupContainer, scale: 1, duration: 300, ease: 'Back.out' });
 
         //Gọi hàm tăng điểm và kiểm tra thắng thua
-        this.increaseScore();
+        this.increaseScore(); 
         
         container.destroy();
 
