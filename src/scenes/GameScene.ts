@@ -34,6 +34,7 @@ export default class GameScene extends Phaser.Scene {
     // --- PROPERTIES ---
     private boy!: Phaser.GameObjects.Sprite;
     private hand!: Phaser.GameObjects.Sprite;
+    private bgm!: Phaser.Sound.BaseSound;
     
     // Score Bar Variables
     private scoreBarMask!: Phaser.GameObjects.Graphics;
@@ -82,6 +83,8 @@ export default class GameScene extends Phaser.Scene {
         this.load.image('hand', 'assets/images/hand.png');
         this.load.image('board', 'assets/images/board.png'); 
         this.load.image('icon_balloon', 'assets/images/icon_ball.png');
+        this.load.audio('bgm-nen', 'assets/audio/nhan_nen.mp3');
+        
 
         this.balloonColors.forEach(c => this.load.image(`balloon_${c}`, `assets/images/balloon_${c}.png`));
 
@@ -110,8 +113,16 @@ export default class GameScene extends Phaser.Scene {
 
         // --- HÀM LOGIC: BẮT ĐẦU ÂM THANH & GAME ---
         // (Được tách ra để có thể gọi ngay lập tức HOẶC gọi sau khi click)
+
+        this.bgm = this.sound.add('bgm-nen', { 
+            loop: true, 
+            volume: 0.1 
+        });
+
         const startGameFlow = () => {
-            AudioManager.play('bgm-nen'); 
+            if (!this.bgm.isPlaying) {
+                this.bgm.play();
+            }
             try { 
                 playVoiceLocked(null as any, 'instruction'); 
             } catch (e) { 

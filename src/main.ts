@@ -69,7 +69,7 @@ function attachResetHandler() {
         resetBtn.onclick = () => {
             console.log('Restart button clicked. Stopping all audio and restarting scene.');
 
-            AudioManager.stopAll(); 
+            game.sound.stopAll();
 
             // 2. PHÁT SFX CLIC
             try {
@@ -99,5 +99,6 @@ window.addEventListener('resize', updateUIButtonScale);
 window.addEventListener('orientationchange', updateUIButtonScale);
 
 document.getElementById('btn-reset')?.addEventListener('sfx-click', () => {
+
     window.gameScene?.scene.restart();
 });

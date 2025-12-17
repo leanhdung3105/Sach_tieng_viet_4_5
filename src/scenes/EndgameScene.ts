@@ -76,8 +76,10 @@ export default class EndGameScene extends Phaser.Scene {
             .setInteractive({ useHandCursor: true });
         
         replayBtn.on('pointerdown', () => {
-            AudioManager.play('sfx-click');
+            this.time.removeAllEvents();
+            this.sound.stopAll();
             AudioManager.stopAll();
+            AudioManager.play('sfx-click');
             this.stopConfetti(); //
             this.scene.start('GameScene');
         });
