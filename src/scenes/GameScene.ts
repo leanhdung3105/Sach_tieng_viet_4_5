@@ -269,10 +269,10 @@ export default class GameScene extends Phaser.Scene {
             //Đặt vị trí BẮT ĐẦU VÀ KẾT THÚC ---
             const base_X = shuffledSlots[index];
             const startX = base_X + Phaser.Math.Between(-20, 20);
-            const startY = this.getH() + baseBallHeight/2; // Vị trí xuất hiện đột ngột
+            const startY = this.getH() - baseBallHeight*0.8; // Vị trí xuất hiện đột ngột
             container.setPosition(startX, startY);
 
-            const endY = baseBallHeight / 2 + baseBallHeight * 0.05; // Vị trí biến mất đột ngột
+            const endY = baseBallHeight / 2 + baseBallHeight * 0.1; // Vị trí biến mất đột ngột
             const flyDuration = Phaser.Math.Between(4000, 6000); 
             const swingRange = 30; 
             const swingToX = base_X + Phaser.Math.Between(-swingRange, swingRange);
@@ -281,7 +281,7 @@ export default class GameScene extends Phaser.Scene {
             const appearTween = this.tweens.add({
                 targets: container, 
                 scale: 1,
-                duration: 200,
+                duration: 400,
                 ease: 'Back.Out',
                 onComplete: (tween, targets) => {
                     const targetContainer = targets[0];
@@ -375,7 +375,7 @@ export default class GameScene extends Phaser.Scene {
                 
                 return; 
             }
-
+        try { AudioManager.play('sfx-correct'); } catch {}
         this.state.isPaused = true;
         this.activeTweens.forEach(t => t.pause());
         if (this.boy) this.boy.stop();
