@@ -26,7 +26,7 @@ const GAME_ITEM_IDS = [
 const ITEM_SOUNDS: Record<string, SoundConfig> = GAME_ITEM_IDS.reduce((acc, itemId) => {
     // Key: itemId
     // Path: assets/audio/grape.mp3
-    acc[itemId] = { src: `${BASE_PATH}${itemId}.mp3`, volume: 0.7 }; 
+    acc[itemId] = { src: `${BASE_PATH}${itemId}.mp3`, volume: 1.0 }; 
     return acc;
 }, {} as Record<string, SoundConfig>);
 
