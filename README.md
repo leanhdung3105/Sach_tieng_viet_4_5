@@ -5,49 +5,49 @@
 
 Một trò chơi giáo dục tương tác vui nhộn dành cho trẻ mầm non (4-5 tuổi), giúp trẻ nhận biết mặt chữ "O" và âm "o" thông qua việc chạm vào các quả bóng bay chứa hình ảnh hoặc chữ cái tương ứng trong một khung cảnh tươi sáng.
 
-## Mục lục
+## 📑 Mục lục
 
-1.  [Giới thiệu](https://www.google.com/search?q=%23gi%E1%BB%9Bi-thi%E1%BB%87u)
-2.  [Yêu cầu hệ thống](https://www.google.com/search?q=%23y%C3%AAu-c%E1%BA%A7u-h%E1%BB%87-th%E1%BB%91ng)
-3.  [Cài đặt và Chạy (Môi trường phát triển)](https://www.google.com/search?q=%23c%C3%A0i-%C4%91%E1%BA%B7t-v%C3%A0-ch%E1%BA%A1y-m%C3%B4i-tr%C6%B0%E1%BB%9Dng-ph%C3%A1t-tri%E1%BB%83n)
-4.  [Cấu trúc dự án](https://www.google.com/search?q=%23c%E1%BA%A5u-tr%C3%BAc-d%E1%BB%B1-%C3%A1n)
-5.  [Xây dựng (Build)](https://www.google.com/search?q=%23x%C3%A2y-d%E1%BB%B1ng-build)
-6.  [Triển khai (Deploy)](https://www.google.com/search?q=%23tri%E1%BB%83n-khai-deploy)
-7.  [Tài nguyên (Assets)](https://www.google.com/search?q=%23t%C3%A0i-nguy%C3%AAn-assets)
+1.  [Giới thiệu & Gameplay](#1-giới-thiệu--gameplay)
+2.  [Công nghệ sử dụng](#2-công-nghệ-sử-dụng)
+3.  [Cài đặt & Phát triển](#3-cài-đặt--phát-triển)
+4.  [Kiến trúc dự án](#4-kiến-trúc-dự-án)
+5.  [Tính năng kỹ thuật nổi bật](#5-tính-năng-kỹ-thuật-nổi-bật)
+6.  [Build & Triển khai](#6-build--triển-khai)
 
------
+---
 
-## 1\. Giới thiệu
+## 1. Giới thiệu & Gameplay
 
-Trò chơi được thiết kế với phong cách nghệ thuật vẽ tay, màu nước tươi sáng, phù hợp với trẻ nhỏ. Cơ chế chính là quan sát các quả bóng bay lên và chạm vào bóng chứa "Vật thể đúng" (chữ O, con cò, cái ô, ô tô) để nhận phản hồi tích cực, trong khi tránh các bóng chứa vật thể gây nhiễu (chữ A, B).
+Game đưa người chơi vào một khung cảnh đồng cỏ tươi sáng. Nhiệm vụ của bé là quan sát các quả bóng bay từ dưới lên:
+* ✅ **Chạm đúng:** Bóng chứa chữ "O" hoặc hình ảnh bắt đầu bằng âm "O" (Con cò, Cái còi, Con bò) -> Được điểm + Hiệu ứng Chữ hiện lên màn hình để bé nhận biết + Âm thanh vui nhộn.
+* ❌ **Chạm sai:** Bóng không chứa gì -> Rung lắc + Âm báo sai.
+* 🏆 **Kết thúc:** Hiển thị màn chúc mừng, pháo hoa giấy (Confetti) và gửi kết quả về hệ thống.
 
-## 2\. Yêu cầu hệ thống
+## 2. Công nghệ sử dụng
 
-Để phát triển và chạy dự án này, bạn cần cài đặt:
+* **Core Engine:** Phaser 3 (Arcade Physics).
+* **Ngôn ngữ:** TypeScript (Strict typing).
+* **Build Tool:** Vite (Hot Module Replacement, Fast Build).
+* **Asset Management:** Tự động load và cache tài nguyên.
+* **UI/UX:** Responsive Design, hỗ trợ xoay màn hình (Orientation Handling).
 
-  * [Node.js](https://nodejs.org/) (Phiên bản LTS được khuyến nghị).
-  * Trình quản lý gói (npm - đi kèm Node.js, hoặc yarn, pnpm).
-  * Trình duyệt web hiện đại (Chrome, Firefox, Safari, Edge) để chạy và kiểm thử.
+## 3. Cài đặt & Phát triển
 
-## 3\. Cài đặt và Chạy (Môi trường phát triển)
+Đảm bảo bạn đã cài đặt [Node.js](https://nodejs.org/) (LTS Version).
 
-Làm theo các bước sau để thiết lập dự án trên máy cục bộ của bạn:
+Bước 1: Clone dự án
+```bash
+git clone <link-repo-của-bạn>
+cd <tên-thư-mục>
 
-1.  **Clone kho chứa (Repository):**
-
-    ```bash
-    git clone <đường-dẫn-đến-repo-của-bạn>
-    cd <tên-thư-mục-dự-án>
-    ```
-
-2.  **Cài đặt các gói phụ thuộc (Dependencies):**
+Bước 2: Cài đặt thư viện
 
     ```bash
     npm install
     # Hoặc nếu dùng yarn: yarn install
     ```
 
-3.  **Chạy server phát triển (Development Server):**
+Bước 2.  **Chạy server phát triển (Development Server):**
 
     ```bash
     npm run dev
@@ -61,37 +61,49 @@ Làm theo các bước sau để thiết lập dự án trên máy cục bộ c�
 (Cấu trúc này là ví dụ phổ biến cho một dự án game web sử dụng công cụ như Vite, bạn có thể điều chỉnh tùy theo thực tế dự án của mình)
 
 ```
-/
+
 ├── public/              # Chứa các file tĩnh (sẽ được copy nguyên vẹn khi build)
 │   ├── assets/
 │   │   ├── images/      # Hình ảnh (Background, Nhân vật, Bóng, Vật thể...)
 │   │   └── audio/       # Âm thanh (Nhạc nền, SFX, Giọng đọc)
 │   └── vite.svg         # Favicon
-├── src/                 # Mã nguồn chính của game
-│   ├── main.ts          # Điểm khởi đầu của ứng dụng
-│   ├── style.css        # CSS chính
-│   ├── game/            # Chứa logic game
-│   │   ├── GameScene.ts # Scene chính xử lý gameplay
-│   │   └── ...
-│   └── ...
-├── index.html           # File HTML chính
-├── package.json         # Khai báo các dependency và script
-├── tsconfig.json        # Cấu hình TypeScript
-└── vite.config.ts       # Cấu hình Vite
-```
+├──src/
+│   ├── audio/
+│   │   └── AudioManager.ts      # Singleton quản lý toàn bộ âm thanh (Music/SFX)
+│    ├── scenes/
+│   │   ├── utils/
+│    │   │   └── backgroundManager.ts # Quản lý đổi hình nền dynamic
+│    │   ├── EndgameScene.ts      # Màn hình kết thúc: Kết quả, Nút Restart, Confetti
+│    │   └── GameScene.ts         # Logic chính: Spawning bóng, tính điểm, va chạm
+├── main.ts                  # Entry point, cấu hình Phaser Config (Scale.FIT)
+├── rotateOrientation.ts     # Xử lý logic xoay màn hình (Mobile/Tablet)
+├── style.css                # CSS cho các phần tử DOM (nút Reset, xoay màn hình)
+└── vite-env.d.ts            # Định nghĩa Type cho Vite
 
-## 5\. Xây dựng (Build)
 
-Để tạo ra phiên bản game sẵn sàng cho việc triển khai (production-ready), hãy chạy lệnh sau. Lệnh này sẽ tối ưu hóa code và tài nguyên, sau đó xuất ra thư mục `dist` (hoặc `build` tùy cấu hình).
+## 5\. Tính năng kỹ thuật nổi bật
 
-```bash
-npm run build
-# Hoặc: yarn build
-```
+📱 Mobile Optimization (Tối ưu hóa di động)
+    - Sử dụng Phaser.Scale.FIT để tự động co giãn game giữ nguyên tỉ lệ trên mọi kích thước màn hình.
 
-Sau khi quá trình build hoàn tất, thư mục `dist/` sẽ chứa tất cả các file cần thiết để chạy game trên một web server.
+    - Orientation Check: Tích hợp module rotateOrientation.ts kiểm tra hướng thiết bị, hiển thị thông báo yêu cầu xoay ngang nếu người dùng cầm dọc điện thoại.
 
-## 6\. Triển khai (Deploy)
+🔊 Robust Audio System (Hệ thống âm thanh)
+    - Quản lý tập trung qua AudioManager.
+
+    - Xử lý triệt để vấn đề chồng chéo âm thanh khi Restart game (Logic stopAll trước khi reload Scene).
+🔌System Integration (Tích hợp hệ thống)
+    - Game có khả năng giao tiếp với nền tảng mẹ (Game Hub/Iruka) thông qua window object.
+
+    - Tự động gửi dữ liệu complete (Score, Time, Reason) khi kết thúc game hoặc người dùng thoát sớm.
+
+
+## 6\. Build & Triển khai
+
+Để đóng gói game cho môi trường Production (tối ưu hóa code, giảm dung lượng):
+    ```bash
+    npm run build
+    ```
 
 Bạn có thể triển khai nội dung thư mục `dist/` lên bất kỳ dịch vụ static web hosting nào. Dưới đây là ví dụ với GitHub Pages bằng gói `gh-pages`:
 
@@ -131,12 +143,12 @@ Danh sách các tài nguyên chính được sử dụng trong game:
 
   * **Hình ảnh:**
       * Nền: Cảnh đồng cỏ, bầu trời.
-      * Nhân vật: Em bé (trang trí).
+      * Nhân vật: Em bé đang chạy bắt quả bóng.
       * Bóng bay: Nhiều màu sắc, hơi trong suốt.
-      * Vật thể Đúng: Chữ O, Con Cò, Cái Ô, Ô tô (phong cách dễ thương).
-      * Vật thể Sai (Nhiễu): Chữ A, Chữ B.
-      * VFX: Hiệu ứng bóng nổ, pháo giấy.
+      * Vật thể Đúng: Chữ O, Con Cò, Ccon bò, cái còi....
+      * Vật thể Sai (Nhiễu): null.
+      * VFX: pháo giấy.
   * **Âm thanh:**
       * Nhạc nền vui tươi.
-      * SFX: Tiếng nổ "Pop", tiếng báo sai vui nhộn.
-      * Giọng đọc: "Chữ O", "Con Cò", "Cái Ô", "Ô tô".
+      * SFX: Tiếng đúng "tinh", tiếng báo sai vui nhộn.
+      * Giọng đọc: "Chữ O", "Con Cò".
