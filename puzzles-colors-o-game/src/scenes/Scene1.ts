@@ -291,7 +291,7 @@ export default class Scene1 extends Phaser.Scene {
         // Chuyển màn sau 3s (nếu cần)
         this.time.delayedCall(1000, () => {
             hideGameButtons();
-            this.scene.start('EndGameScene'); 
+            this.scene.start('Scene2'); 
         });
     }
 }
