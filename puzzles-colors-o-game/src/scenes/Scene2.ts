@@ -31,6 +31,9 @@ export default class Scene2 extends Phaser.Scene {
     private brushTexture: string = 'brush_circle';
     private brushSize: number = 100;
     private partColors: Map<string, Set<number>> = new Map();
+    private handHint!: Phaser.GameObjects.Image;       // Ảnh bàn tay
+    private firstColorBtn!: Phaser.GameObjects.Image;  // Nút màu Đỏ (để tay biết đường bay đến)
+    private isIntroActive: boolean = false;             // Biến kiểm soát vòng lặp Intro
 
     // Biến trạng thái tẩy
     private isErasing: boolean = false;
@@ -111,8 +114,11 @@ export default class Scene2 extends Phaser.Scene {
 
         // Load Ảnh Cục Tẩy
         this.load.image('btn_eraser', 'assets/images/ui/btn_exit.png');
+        //Tải ảnh bàn tay
+        this.load.image('hand_hint', 'assets/images/ui/hand.png');
 
         // Tạo texture cọ
+
         if (!this.textures.exists('brush_circle')) {
             const canvas = this.textures.createCanvas('brush_circle', this.brushSize, this.brushSize);
             if (canvas) {
@@ -139,6 +145,113 @@ export default class Scene2 extends Phaser.Scene {
         this.createPalette();
         this.setupInput();
 
+        // TẠO BÀN TAY (Mặc định ẩn)
+        this.handHint = this.add.image(0, 0, 'hand_hint')
+            .setDepth(200) // Luôn nổi trên cùng
+            .setAlpha(0)   
+            .setScale(0.7); 
+
+        // GỌI INTRO
+        this.playIntroSequence();
+    }
+
+    private playIntroSequence() {
+        this.isIntroActive = true; // BẬT CỜ LÊN
+
+        // 1. Đọc Voice
+        AudioManager.play('voice_intro_s2');
+
+        // 2. Chờ voice đọc gần xong (ví dụ 1s) thì bắt đầu diễn
+        this.time.delayedCall(1000, () => {
+            if (this.isIntroActive) {
+                this.showInitialTutorial(); 
+            } 
+        });
+    }
+
+    private stopIntro() {
+        // Nếu intro đã tắt rồi thì thôi, không làm gì nữa
+        if (!this.isIntroActive) return;
+
+        console.log("Dừng Intro!");
+        this.isIntroActive = false; // Gạt cầu dao tắt vòng lặp
+
+        // Dừng chuyển động bàn tay ngay lập tức
+        if (this.handHint) {
+            this.tweens.killTweensOf(this.handHint);
+            this.handHint.setAlpha(0);
+            this.handHint.setPosition(-200, -200); // Cất đi
+        }
+    }
+
+    private showInitialTutorial() {
+        if (!this.firstColorBtn || !this.handHint || !this.isIntroActive) return;
+
+        // Tọa độ mục tiêu
+        const colorX = this.firstColorBtn.x + 20; 
+        const colorY = this.firstColorBtn.y + 20;
+        const targetX = this.pctX(0.37); // Vị trí Cô giáo
+        const targetY = this.pctY(0.48);
+
+        // Setup vị trí xuất phát
+        this.handHint.setPosition(colorX, colorY);
+        this.handHint.setAlpha(0);
+        this.handHint.setScale(0.7); // Reset scale
+
+        // --- SỬA LẠI: DÙNG 'CHAIN' THAY CHO 'TIMELINE' ---
+        this.tweens.chain({
+            targets: this.handHint, // Áp dụng chung cho cái tay
+            tweens: [
+                {
+                    // A. Bay đến nút màu
+                    alpha: 1,
+                    x: colorX,
+                    y: colorY,
+                    duration: 600,
+                    ease: 'Power2'
+                },
+                {
+                    // B. Ấn nút màu (Thu nhỏ = Ấn xuống)
+                    scale: 0.5, 
+                    duration: 200,
+                    yoyo: true, 
+                    repeat: 0.7
+                },
+                {
+                    // C. Bay lên hình Cô giáo
+                    x: targetX,
+                    y: targetY + 100, 
+                    duration: 800,
+                    ease: 'Sine.easeInOut',
+                    delay: 100 
+                },
+                {
+                    // D. Giả vờ tô (Quẹt quẹt)
+                    x: '-=30', 
+                    y: '-=10',
+                    duration: 400,
+                    yoyo: true,
+                    repeat: 3, 
+                    ease: 'Sine.easeInOut'
+                },
+                {
+                    // E. Biến mất
+                    alpha: 0,
+                    duration: 500,
+                    onComplete: () => {
+                        this.handHint.setPosition(-200, -200); 
+
+                        // Nếu Intro vẫn đang bật -> Đợi 1s rồi diễn lại từ đầu
+                        if (this.isIntroActive) {
+                            this.time.delayedCall(1000, () => {
+                                // Gọi đệ quy lại chính hàm này
+                                this.showInitialTutorial(); 
+                            });
+                        }
+                    }
+                }
+            ]
+        });
     }
 
     private creatBroadAndBanner() {
@@ -162,8 +275,15 @@ export default class Scene2 extends Phaser.Scene {
             const btn = this.add.image(startX + index * buttonSpacing, yPos, item.key);
             btn.setInteractive({ useHandCursor: true }).setAlpha(0.8);
 
+            // LƯU NÚT ĐẦU TIÊN (MÀU ĐỎ) 
+            // Để lát nữa bàn tay biết bay vào chỗ nào
+            if (index === 0) {
+                this.firstColorBtn = btn;
+            }
+
             // Logic khi bấm nút MÀU
             btn.on('pointerdown', () => {
+                this.stopIntro();
                 this.isErasing = false; // Tắt tẩy
                 this.brushColor = item.color; // Set màu
 
@@ -183,6 +303,7 @@ export default class Scene2 extends Phaser.Scene {
 
         // Logic khi bấm nút TẨY
         eraserBtn.on('pointerdown', () => {
+            this.stopIntro();
             this.isErasing = true; // Bật chế độ tẩy
 
             // Reset visual tất cả nút màu
@@ -288,6 +409,12 @@ export default class Scene2 extends Phaser.Scene {
     }
 
     private setupInput() {
+        this.input.on('pointerdown', () => {
+
+            this.stopIntro();
+           // this.resetIdleTimer();
+        });
+
         this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
             if (pointer.isDown && this.activeRenderTexture) {
                 this.paint(pointer, this.activeRenderTexture);
