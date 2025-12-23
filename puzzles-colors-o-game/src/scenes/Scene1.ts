@@ -59,7 +59,7 @@ export default class Scene1 extends Phaser.Scene {
     }
 
     create() {
-        this.bgm = this.sound.add('bgm-nen', { loop: true, volume: 0.05 });
+        this.bgm = this.sound.add('bgm-nen', { loop: true, volume: 0.3 });
         // 1. Setup hệ thống Rotation & Audio
         resetVoiceState();
         (window as any).gameScene = this; // 
