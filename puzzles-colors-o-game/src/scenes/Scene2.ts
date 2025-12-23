@@ -16,7 +16,8 @@ const TEACHER_CONFIG = {
     baseScale: 0.75,
     outlineKey: 'co_outline',
     parts: [
-        { key: 'co_hands', offsetX: 0, offsetY: 0, scale: 0.751 },
+        { key: 'co_hand_l', offsetX: 0, offsetY: 0, scale: 0.751 },
+        { key: 'co_hand_r', offsetX: 0, offsetY: 0, scale: 0.751 },
         { key: 'co_face',  offsetX: 0, offsetY: 0, scale: 0.751 },
         { key: 'co_shirt', offsetX: 0, offsetY: 0, scale: 0.751 },
         { key: 'co_book',  offsetX: 0, offsetY: 0, scale: 0.751 },
@@ -42,6 +43,15 @@ export default class Scene2 extends Phaser.Scene {
     private paletteButtons: Phaser.GameObjects.Image[] = [];
     private totalParts: number = 0;
     private finishedParts: Set<string> = new Set();
+
+    // --- THÊM VÀO ĐÂY ---
+    // Biến cho hệ thống Gợi ý (Idle Hint)
+    private idleTimer: number = 0;           // Đếm thời gian
+    private readonly IDLE_THRESHOLD = 10000;  // 5 giây
+    private activeHintTween: Phaser.Tweens.Tween | null = null; // Tween đang chạy
+    
+    // Map lưu trữ các bộ phận chưa tô (Key: ID, Value: Image HitArea)
+    private unfinishedPartsMap: Map<string, Phaser.GameObjects.Image> = new Map();
 
     private readonly PALETTE_DATA = [
         { key: 'btn_red',    color: 0xFF595E },
@@ -97,7 +107,8 @@ export default class Scene2 extends Phaser.Scene {
         this.load.image('co_face', 'assets/images/S2/face.png');
         this.load.image('co_hair', 'assets/images/S2/hair.png');
         this.load.image('co_shirt', 'assets/images/S2/body.png');
-        this.load.image('co_hands', 'assets/images/S2/hand.png');
+        this.load.image('co_hand_l', 'assets/images/S2/left_hand.png');
+        this.load.image('co_hand_r', 'assets/images/S2/right_hand.png');
         this.load.image('co_book', 'assets/images/S2/book.png');
         this.load.image('board_s2', 'assets/images/bg/board_scene_2.png');
         this.load.image('banner_s2', 'assets/images/S2/banner.png');
@@ -113,7 +124,7 @@ export default class Scene2 extends Phaser.Scene {
         this.load.image('btn_black',  'assets/images/color/black.png');
 
         // Load Ảnh Cục Tẩy
-        this.load.image('btn_eraser', 'assets/images/ui/btn_exit.png');
+        this.load.image('btn_eraser', 'assets/images/ui/btn_eraser.png');
         //Tải ảnh bàn tay
         this.load.image('hand_hint', 'assets/images/ui/hand.png');
 
@@ -175,6 +186,8 @@ export default class Scene2 extends Phaser.Scene {
 
         console.log("Dừng Intro!");
         this.isIntroActive = false; // Gạt cầu dao tắt vòng lặp
+
+        this.idleTimer = 0;
 
         // Dừng chuyển động bàn tay ngay lập tức
         if (this.handHint) {
@@ -284,6 +297,7 @@ export default class Scene2 extends Phaser.Scene {
             // Logic khi bấm nút MÀU
             btn.on('pointerdown', () => {
                 this.stopIntro();
+                this.resetIdleTimer();
                 this.isErasing = false; // Tắt tẩy
                 this.brushColor = item.color; // Set màu
 
@@ -304,6 +318,7 @@ export default class Scene2 extends Phaser.Scene {
         // Logic khi bấm nút TẨY
         eraserBtn.on('pointerdown', () => {
             this.stopIntro();
+            this.resetIdleTimer();
             this.isErasing = true; // Bật chế độ tẩy
 
             // Reset visual tất cả nút màu
@@ -376,7 +391,12 @@ export default class Scene2 extends Phaser.Scene {
 
         const hitArea = this.add.image(x, y, key).setScale(scale).setAlpha(0.01).setDepth(50);
         hitArea.setInteractive({ useHandCursor: true, pixelPerfect: true });
+
+        hitArea.setData('originScale', scale); // Lưu scale gốc
+        this.unfinishedPartsMap.set(uniqueId, hitArea); // Lưu vào danh sách chưa tô
+
         hitArea.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            this.resetIdleTimer();
             this.activeRenderTexture = rt;
             this.paint(pointer, rt);
         });
@@ -412,7 +432,7 @@ export default class Scene2 extends Phaser.Scene {
         this.input.on('pointerdown', () => {
 
             this.stopIntro();
-           // this.resetIdleTimer();
+            this.resetIdleTimer();
         });
 
         this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
@@ -502,6 +522,15 @@ export default class Scene2 extends Phaser.Scene {
                 rt.setData('isFinished', true);
                 this.finishedParts.add(id);
 
+                // Xóa khỏi danh sách gợi ý để không bao giờ gợi ý lại
+            if (this.unfinishedPartsMap.has(id)) {
+                const hitArea = this.unfinishedPartsMap.get(id);
+                if (hitArea) {
+                    this.tweens.killTweensOf(hitArea);
+                    hitArea.destroy(); 
+                }
+                this.unfinishedPartsMap.delete(id);
+            }
                 // --- LOGIC AUTO-FILL THÔNG MINH ---
                 
                 // Lấy danh sách màu đã dùng cho phần này
@@ -537,9 +566,109 @@ export default class Scene2 extends Phaser.Scene {
         console.log(`Đã xong: ${this.finishedParts.size} / ${this.totalParts}`);
         if (this.finishedParts.size >= this.totalParts) {
             console.log("CHIẾN THẮNG!");
+
+            AudioManager.play('sfx-correct');
             this.time.delayedCall(1000, () => {
                 this.scene.start('EndGameScene');
             });
         }
+    }
+
+    // --- HỆ THỐNG GỢI Ý (IDLE HINT) ---
+
+    update(time: number, delta: number) {
+        // Kiểm tra xem có đang tô không?
+        // (activeRenderTexture khác null nghĩa là đang giữ chuột tô)
+        const isPainting = this.activeRenderTexture !== null;
+
+        // Đếm giờ khi: 
+        // 1. Game chưa xong
+        // 2. Intro đã tắt
+        // 3. KHÔNG ĐANG TÔ (isPainting = false) <--- QUAN TRỌNG
+        if (this.finishedParts.size < this.totalParts && !this.isIntroActive && !isPainting) {
+            this.idleTimer += delta;
+
+            if (this.idleTimer > this.IDLE_THRESHOLD && !this.activeHintTween) {
+                this.showHint();
+            }
+        } else {
+            // Nếu đang tô thì luôn giữ đồng hồ ở số 0
+            this.idleTimer = 0;
+        }
+    }
+
+    private resetIdleTimer() {
+        this.idleTimer = 0;
+
+        // 1. Tắt hiệu ứng nhấp nháy (Vật thể)
+        if (this.activeHintTween) {
+            this.activeHintTween.stop();
+            this.activeHintTween = null;
+            
+            this.unfinishedPartsMap.forEach(img => {
+                this.tweens.killTweensOf(img);
+                img.setAlpha(0.01);
+                // Trả về scale gốc
+                const s = img.getData('originScale');
+                if (s) img.setScale(s);
+            });
+        }
+
+        // 2. Tắt bàn tay (Nếu đang dùng để gợi ý)
+        // (Chỉ tắt khi Intro đã xong để tránh xung đột)
+        if (!this.isIntroActive && this.handHint) {
+            this.tweens.killTweensOf(this.handHint);
+            this.handHint.setAlpha(0);
+            this.handHint.setPosition(-200, -200);
+        }
+    }
+
+    private showHint() {
+        // Lấy danh sách chưa tô
+        const keys = Array.from(this.unfinishedPartsMap.keys());
+        if (keys.length === 0) return;
+
+        // Chọn ngẫu nhiên 1 phần
+        const randomKey = keys[Math.floor(Math.random() * keys.length)];
+        const targetImage = this.unfinishedPartsMap.get(randomKey);
+
+        if (!targetImage || !this.handHint) return;
+
+        // A. VOICE: Nhắc nhở
+        AudioManager.play('hint'); 
+
+        // B. VISUAL 1: Vật thể nhấp nháy
+        this.activeHintTween = this.tweens.add({
+            targets: targetImage,
+            alpha: { from: 0.01, to: 0.6 },
+            scale: { 
+                from: targetImage.getData('originScale'), 
+                to: targetImage.getData('originScale') * 1.05 
+            },
+            duration: 800,
+            yoyo: true,
+            repeat: 2,
+            onComplete: () => {
+                this.activeHintTween = null;
+                this.idleTimer = 0; // Reset để chờ lần sau
+            }
+        });
+
+        // C. VISUAL 2: Bàn tay chỉ vào
+        const handX = targetImage.x + 40;
+        const handY = targetImage.y + 40;
+
+        this.handHint.setPosition(handX + 50, handY + 50); // Xuất phát xa xa
+        this.handHint.setAlpha(0);
+        this.handHint.setScale(0.7);
+
+        this.tweens.chain({
+            targets: this.handHint,
+            tweens: [
+                { alpha: 1, x: handX, y: handY, duration: 500, ease: 'Power2' }, // Hiện ra
+                { scale: 0.5, duration: 400, yoyo: true, repeat: 3 }, // Ấn ấn 4 cái
+                { alpha: 0, duration: 500, onComplete: () => this.handHint.setPosition(-200, -200) } // Biến mất
+            ]
+        });
     }
 }
