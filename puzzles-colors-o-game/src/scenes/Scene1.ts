@@ -15,6 +15,12 @@ export default class Scene1 extends Phaser.Scene {
     private bgm!: Phaser.Sound.BaseSound;
     private bannerBg!: Phaser.GameObjects.Image;
 
+    private handHint!: Phaser.GameObjects.Image; // Ảnh bàn tay
+    private idleTimer: number = 0;               // Đếm thời gian rảnh
+    private readonly IDLE_THRESHOLD = 10000;      // 5 giây
+    private isHintActive: boolean = false;       // Cờ kiểm tra xem tay có đang diễn không
+    private canCheckIdle: boolean = false;
+
     constructor() {
         super("Scene1");
     }
@@ -46,6 +52,7 @@ export default class Scene1 extends Phaser.Scene {
         // Kết quả chiến thắng
         this.load.image('bg_result', 'assets/images/bg/board_pop_up.png');
         this.load.image('text_result', 'assets/images/S1/text_umbrella.png');
+        this.load.image('hand_hint', 'assets/images/ui/hand.png');
 
         // Audio nhạc nền & SFX
         this.load.audio('bgm-nen','assets/audio/sfx/nhac_nen.mp3');
@@ -63,8 +70,31 @@ export default class Scene1 extends Phaser.Scene {
         this.createLeftPanel();
         this.createRightPanel();
 
+        // 1. Tạo bàn tay (Mặc định ẩn)
+        this.handHint = this.add.image(0, 0, 'hand_hint')
+            .setDepth(200) 
+            .setAlpha(0)
+            .setScale(0.7);
+
+        // 2. Chạm màn hình bất kỳ đâu -> Tắt gợi ý & Reset timer
+        this.input.on('pointerdown', () => {
+            this.resetIdleTimer();
+        });
+
         // 3. Logic bắt đầu game (Xử lý Unlock Audio)
         this.initAudioFlow();
+    }
+
+    // --- HÀM PHỤ TRỢ: Lấy độ dài file âm thanh (Tính bằng giây) ---
+    getSoundDuration(key: string): number {
+        // Thử lấy từ cache của Phaser
+        if (this.cache.audio.exists(key)) {
+            const sound = this.sound.add(key);
+            const duration = sound.duration;
+            sound.destroy(); // Lấy xong thì xóa đi cho nhẹ
+            return duration;
+        }
+        return 2; // Nếu không tìm thấy file thì mặc định chờ 2 giây
     }
 
     // --- LOGIC KHỞI TẠO AUDIO ---
@@ -78,16 +108,31 @@ export default class Scene1 extends Phaser.Scene {
             if (!this.bgm.isPlaying) {
                 this.bgm.play();
             }
+
+            // --- 1. KHÓA ĐẾM GIỜ LÚC BẮT ĐẦU ---
+            this.canCheckIdle = false;
             this.isGameActive = true;
             // Phát voice hướng dẫn + câu đố
             // Logic: Đọc hướng dẫn trước -> Hết hướng dẫn thì đọc câu đố (nếu muốn tách)
             // Ở đây mình gọi instruction chung theo file bạn có
             playVoiceLocked(null, 'instruction'); 
             
-            // Nếu muốn đọc câu đố sau 3 giây (ví dụ)
-            this.time.delayedCall(4000, () => {
+            const instructionTime = this.getSoundDuration('instruction');
+
+            // Chờ đọc xong hướng dẫn (+ thêm 0.5s nghỉ) thì mới đọc câu đố
+            this.time.delayedCall((instructionTime + 1) * 1000, () => {
                 if (this.isGameActive) {
                     AudioManager.play('cau_do');
+                    const riddleDuration = this.getSoundDuration('cau_do');
+
+                    // Đợi đọc XONG mới bắt đầu
+                    this.time.delayedCall(6000, () => {
+                        if (this.isGameActive) {
+                            this.idleTimer = 0; 
+                            this.isHintActive = false;
+                            this.canCheckIdle = true;
+                        }
+                    });
                 };
             });
             // Mở lại bàn phím
@@ -162,8 +207,14 @@ export default class Scene1 extends Phaser.Scene {
             'img_rain'
         ).setScale(0.7).setOrigin(0.5,1);
 
+        const poemText = this.add.image(
+            centerX, 
+            underY - rain.displayHeight - this.pctY(0.05), 
+            'poem_text'
+        ).setScale(0.7).setOrigin(0.5,1);
+
         this.tweens.add({
-            targets: rain,
+            targets: poemText,
             y: '+=10', // Trôi lên xuống
             duration: 1200,
             yoyo: true,
@@ -171,11 +222,26 @@ export default class Scene1 extends Phaser.Scene {
             ease: 'Sine.easeInOut'
         });
 
-        const cau_do =  this.add.image(
-            centerX, 
-            underY - rain.displayHeight - this.pctY(0.05), 
-            'poem_text'
-        ).setScale(0.7).setOrigin(0.5,1);
+        // 1. Làm cho nó bấm được
+        poemText.setInteractive({ useHandCursor: true });
+
+        // 2. Sự kiện bấm vào
+        poemText.on('pointerdown', () => {
+            if (this.isGameActive) {
+                AudioManager.stopAll();
+                // Phát lại câu đố
+                AudioManager.play('cau_do');
+
+                // Hiệu ứng "nhún" nhẹ một cái để phản hồi
+                this.tweens.add({
+                    targets: poemText,
+                    scale: 0.6, // Thu nhỏ xíu
+                    duration: 100,
+                    yoyo: true, // Rồi to lại
+                    ease: 'Sine.easeInOut'
+                });
+            }
+        });
 
         const icon_o = this.add.image(
             centerX - broad_left.displayWidth * 0.13, 
@@ -185,8 +251,8 @@ export default class Scene1 extends Phaser.Scene {
         
         this.tweens.add({
             targets: icon_o,
-            angle: { from: -5, to: 5 }, // Nghiêng qua lại
-            duration: 1500,
+            angle: { from: -4, to: 4 }, // Nghiêng qua lại
+            duration: 400,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
@@ -293,6 +359,8 @@ export default class Scene1 extends Phaser.Scene {
         this.puzzleItems.forEach(i => i.disableInteractive());
 
         this.tweens.killTweensOf(winnerItem);
+        AudioManager.stop('instruction');
+        AudioManager.stop('cau_do');
         AudioManager.play('sfx-ting');
 
         // Ẩn món sai
@@ -318,7 +386,6 @@ export default class Scene1 extends Phaser.Scene {
 
         // --- HIỆU ỨNG BAY VÀO ---
         winnerItem.setDepth(100);
-        
         this.tweens.add({
             targets: winnerItem,
             x: this.victoryBg.x,
@@ -330,12 +397,91 @@ export default class Scene1 extends Phaser.Scene {
             duration: 600, //
             ease: 'Back.out',
             onComplete: () => {
+
                 AudioManager.play('voice_cai_o');
-                // Chuyển màn sau 3s (nếu cần)
-                this.nextScene();
+                //const timeCaiO = this.getSoundDuration('voice_cai_o');
+
+                this.time.delayedCall(1000, () => {
+                    // 2. Đọc "Bé giỏi quá" (sfx-correct)
+                    AudioManager.play('sfx-correct'); 
+                    const timeKhen = this.getSoundDuration('sfx-correct'); // Lấy thời gian
+
+                    // Chờ đọc xong lời khen
+                    this.time.delayedCall(timeKhen * 1000, () => {
+                        
+                        // 3. Chuyển màn
+                        this.nextScene();
+                    });
+                });
                 
             }
         }); 
+    }
+
+    // --- CÁC HÀM LOGIC GỢI Ý (MỚI) ---
+
+    // 1. Vòng lặp kiểm tra thời gian
+    update(time: number, delta: number) {
+        // Thêm điều kiện && this.canCheckIdle
+        if (this.isGameActive && !this.isHintActive && this.canCheckIdle) {
+            this.idleTimer += delta;
+
+            if (this.idleTimer > this.IDLE_THRESHOLD) {
+                this.showIdleHint();
+            }
+        }
+    }
+
+    // 2. Hàm tắt gợi ý (Reset)
+    private resetIdleTimer() {
+        this.idleTimer = 0;
+
+        // Nếu tay đang diễn thì tắt ngay
+        if (this.isHintActive && this.handHint) {
+            this.isHintActive = false;
+            this.tweens.killTweensOf(this.handHint);
+            this.handHint.setAlpha(0);
+            this.handHint.setPosition(-200, -200);
+        }
+    }
+
+    // Gợi ý ĐÁP ÁN (Chỉ thẳng vào cái Ô khi bí)
+    private showIdleHint() {
+        if (!this.isGameActive || this.isHintActive) return;
+
+        // Tìm món đúng (isCorrect = true)
+        const correctItem = this.puzzleItems.find(i => i.getData('isCorrect') === true);
+        if (!correctItem) return;
+
+        this.isHintActive = true;
+
+        // Bay từ ngoài vào chỉ đúng chỗ
+        this.handHint.setPosition(this.getW() + 100, this.getH() + 100);
+        this.handHint.setAlpha(0);
+
+        this.tweens.chain({
+            targets: this.handHint,
+            tweens: [
+                {   // Bay đến
+                    alpha: 1,
+                    x: correctItem.x + 30, // Lệch chút để ngón trỏ chỉ vào
+                    y: correctItem.y + 30,
+                    duration: 800,
+                    ease: 'Power2'
+                },
+                {   // Ấn ấn (Tap)
+                    scale: 0.5, duration: 300, yoyo: true, repeat: 2
+                },
+                {   // Biến mất
+                    alpha: 0, duration: 500,
+                    onComplete: () => {
+                        this.isHintActive = false;
+                        this.idleTimer = 0;
+                        this.handHint.setPosition(-200, -200);
+                    }
+                }
+            ]
+        });
     }
 
     nextScene() {
