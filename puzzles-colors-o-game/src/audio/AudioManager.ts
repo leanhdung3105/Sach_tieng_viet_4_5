@@ -14,7 +14,7 @@ const BASE_PATH = 'assets/audio/';
 const SOUND_MAP: Record<string, SoundConfig> = {
 
     // ---- SFX Chung ----
-    'sfx-correct': { src: `${BASE_PATH}sfx/correct.mp3`, volume: 0.5 },
+    'sfx-correct': { src: `${BASE_PATH}sfx/correct_answer.mp3`, volume: 1.0 },
     'sfx-wrong': { src: `${BASE_PATH}sfx/wrong.mp3`, volume: 0.5 },
     'sfx-click': { src: `${BASE_PATH}sfx/click.mp3`, volume: 0.5 },
     'voice_cai_o': { src: `${BASE_PATH}prompt/cai_o.mp3`, volume: 1.0 }, // Đọc đáp án
@@ -24,6 +24,8 @@ const SOUND_MAP: Record<string, SoundConfig> = {
     'voice-rotate': { src: `${BASE_PATH}prompt/rotate.mp3`, volume: 0.8 },
     'instruction': { src: `${BASE_PATH}prompt/instruction_s1.mp3`, volume: 1.0 },
     'cau_do': { src: `${BASE_PATH}prompt/cau_do.mp3`, volume: 1.0 },
+    'voice_intro_s2': { src: `${BASE_PATH}prompt/instruction_s2.mp3`, volume: 1.0 },
+    'hint': { src: `${BASE_PATH}prompt/hint.mp3`, volume: 1.0 },
 
     // ---- Correct Answer Variations ----
     'complete': { src: `${BASE_PATH}sfx/complete.mp3`, volume: 1.0 },
