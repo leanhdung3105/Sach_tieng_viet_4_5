@@ -68,8 +68,9 @@ function attachResetHandler() {
         resetBtn.onclick = () => {
             console.log('Restart button clicked. Stopping all audio and restarting scene.');
 
-            game.sound.stopAll();
-
+            //game.sound.stopAll();
+            game.sound.stopByKey('bgm-nen');
+            AudioManager.stopAll();
             // 2. PHÁT SFX CLIC
             try {
                 AudioManager.play('sfx-click'); 
