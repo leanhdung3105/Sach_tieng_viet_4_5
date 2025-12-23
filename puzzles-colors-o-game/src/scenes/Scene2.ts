@@ -2,29 +2,6 @@ import Phaser from 'phaser';
 import AudioManager from '../audio/AudioManager';
 import { setGameSceneReference, resetVoiceState } from '../rotateOrientation';
 
-// --- CONFIG ---
-const LETTER_CONFIG = {
-    baseScale: 0.7,
-    outlineKey: 'o_outline',
-    parts: [
-        { key: 'o_body', offsetX: 1, offsetY: 2, scale: 0.7 },
-        { key: 'o_hat',  offsetX: 4, offsetY: 5, scale: 0.71 }
-    ]
-};
-
-const TEACHER_CONFIG = {
-    baseScale: 0.75,
-    outlineKey: 'co_outline',
-    parts: [
-        { key: 'co_hand_l', offsetX: 0, offsetY: 0, scale: 0.751 },
-        { key: 'co_hand_r', offsetX: 0, offsetY: 0, scale: 0.751 },
-        { key: 'co_face',  offsetX: 0, offsetY: 0, scale: 0.751 },
-        { key: 'co_shirt', offsetX: 0, offsetY: 0, scale: 0.751 },
-        { key: 'co_book',  offsetX: 0, offsetY: 0, scale: 0.751 },
-        { key: 'co_hair',  offsetX: 0, offsetY: 0, scale: 0.751 }
-    ]
-};
-
 export default class Scene2 extends Phaser.Scene {
     // Biến vẽ
     private brushColor: number = 0xff0000;
@@ -47,7 +24,7 @@ export default class Scene2 extends Phaser.Scene {
     // --- THÊM VÀO ĐÂY ---
     // Biến cho hệ thống Gợi ý (Idle Hint)
     private idleTimer: number = 0;           // Đếm thời gian
-    private readonly IDLE_THRESHOLD = 10000;  // 5 giây
+    private readonly IDLE_THRESHOLD = 5000;  // 5 giây
     private activeHintTween: Phaser.Tweens.Tween | null = null; // Tween đang chạy
     
     // Map lưu trữ các bộ phận chưa tô (Key: ID, Value: Image HitArea)
@@ -127,9 +104,9 @@ export default class Scene2 extends Phaser.Scene {
         this.load.image('btn_eraser', 'assets/images/ui/btn_eraser.png');
         //Tải ảnh bàn tay
         this.load.image('hand_hint', 'assets/images/ui/hand.png');
+        this.load.json('level_config', 'assets/data/level_s2_config.json');
 
         // Tạo texture cọ
-
         if (!this.textures.exists('brush_circle')) {
             const canvas = this.textures.createCanvas('brush_circle', this.brushSize, this.brushSize);
             if (canvas) {
@@ -148,11 +125,15 @@ export default class Scene2 extends Phaser.Scene {
         resetVoiceState();
         (window as any).gameScene = this;
         setGameSceneReference(this);
-        const centerY = this.pctY(0.48);
+        //const centerY = this.pctY(0.48);
+        const levelData = this.cache.json.get('level_config');
 
         this.creatBroadAndBanner();
-        this.createCharacter(this.pctX(0.37), centerY, TEACHER_CONFIG);
-        this.createCharacter(this.pctX(0.7), centerY, LETTER_CONFIG);
+        //this.createCharacter(this.pctX(0.37), centerY, TEACHER_CONFIG);
+        //this.createCharacter(this.pctX(0.7), centerY, LETTER_CONFIG);
+
+        this.createCharacter(levelData.teacher);
+        this.createCharacter(levelData.letter);
         this.createPalette();
         this.setupInput();
 
@@ -360,10 +341,14 @@ export default class Scene2 extends Phaser.Scene {
         return density > 0 ? density : 1;
     }
 
-    private createCharacter(centerX: number, centerY: number, config: any) {
+    private createCharacter(config: any) {
+        // Tự tính tâm dựa trên % màn hình trong JSON
+        const centerX = this.pctX(config.baseX_pct);
+        const centerY = this.pctY(config.baseY_pct);
+
         config.parts.forEach((part: any, index: number) => {
             const uniqueId = `${part.key}_${index}_${Math.random()}`;
-            this.createPaintablePart(centerX + part.offsetX, centerY + part.offsetY, part.key, part.scale, uniqueId);
+            this.createPaintablePart(centerX + part.offsetX, centerY + part.offsetY, part, uniqueId);
             this.totalParts++;
         });
 
@@ -371,7 +356,12 @@ export default class Scene2 extends Phaser.Scene {
         outline.setScale(config.baseScale).setDepth(100).setInteractive({ pixelPerfect: true });
     }
 
-    private createPaintablePart(x: number, y: number, key: string, scale: number, uniqueId: string) {
+    private createPaintablePart(x: number, y: number, partConfig: any, uniqueId: string) {
+
+        // Lấy dữ liệu từ object ra
+        const key = partConfig.key;
+        const scale = partConfig.scale;
+
         // --- TÍNH MẬT ĐỘ ---
         const density = this.getImageDensity(key);
 
@@ -393,6 +383,9 @@ export default class Scene2 extends Phaser.Scene {
         hitArea.setInteractive({ useHandCursor: true, pixelPerfect: true });
 
         hitArea.setData('originScale', scale); // Lưu scale gốc
+        // --- THÊM MỚI: LƯU TỌA ĐỘ HINT VÀO DATA ---
+        hitArea.setData('hintX', partConfig.hintX || 0);
+        hitArea.setData('hintY', partConfig.hintY || 0);
         this.unfinishedPartsMap.set(uniqueId, hitArea); // Lưu vào danh sách chưa tô
 
         hitArea.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
@@ -655,8 +648,16 @@ export default class Scene2 extends Phaser.Scene {
         });
 
         // C. VISUAL 2: Bàn tay chỉ vào
-        const handX = targetImage.x + 40;
-        const handY = targetImage.y + 40;
+        // 1. Lấy độ lệch (Offset) từ Data
+        const offsetX = targetImage.getData('hintX') || 0;
+        const offsetY = targetImage.getData('hintY') || 0;
+
+        // 2. Lấy scale hiện tại
+        const currentScale = targetImage.scaleX;
+
+        // 3. Tính vị trí chính xác
+        const handX = targetImage.x + (offsetX * currentScale);
+        const handY = targetImage.y + (offsetY * currentScale);
 
         this.handHint.setPosition(handX + 50, handY + 50); // Xuất phát xa xa
         this.handHint.setAlpha(0);
