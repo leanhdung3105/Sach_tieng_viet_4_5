@@ -1,0 +1,26 @@
+{
+  "teacher": {
+    "baseScale": 0.75,
+    "outlineKey": "co_outline",
+    "baseX_pct": 0.37, 
+    "baseY_pct": 0.48,
+    "parts": [
+      { "key": "co_hand_l", "offsetX": 0, "offsetY": 0, "scale": 0.751, "hintX": -160, "hintY": 400 },
+      { "key": "co_hand_r", "offsetX": 0, "offsetY": 0, "scale": 0.751, "hintX": 400, "hintY": -30 },
+      { "key": "co_face",   "offsetX": 0, "offsetY": 0, "scale": 0.751, "hintX": -50, "hintY": -100 },
+      { "key": "co_shirt",  "offsetX": 0, "offsetY": 0, "scale": 0.751, "hintX": -30, "hintY": 200 },
+      { "key": "co_book",   "offsetX": 0, "offsetY": 0, "scale": 0.751, "hintX": -230, "hintY": 230 },
+      { "key": "co_hair",   "offsetX": 0, "offsetY": 0, "scale": 0.751, "hintX": -100, "hintY": -350 } 
+    ]
+  },
+  "letter": {
+    "baseScale": 0.7,
+    "outlineKey": "o_outline",
+    "baseX_pct": 0.7,
+    "baseY_pct": 0.48,
+    "parts": [
+      { "key": "o_body", "offsetX": 1, "offsetY": 2, "scale": 0.7,  "hintX": -130, "hintY": 0 },
+      { "key": "o_hat",  "offsetX": 4, "offsetY": 5, "scale": 0.71, "hintX": 40,  "hintY": -260 }
+    ]
+  }
+}
