@@ -168,7 +168,7 @@ export default class Scene1 extends Phaser.Scene {
 
     createBanner() {
         const destY_Bg = this.pctY(0.01);
-        const destY_Text = this.pctY(0.03);
+        const destY_Text = this.pctY(0.035);
 
         // --- 1. ĐẶT LUÔN TẠI VỊ TRÍ ĐÍCH (Không rơi nữa) ---
         this.bannerBg = this.add.image(
@@ -183,10 +183,10 @@ export default class Scene1 extends Phaser.Scene {
             'banner_text'
         ).setOrigin(0.5, 0).setScale(0.7);
 
-        this.startBannerIdle(this.bannerBg, destY_Bg);
-        this.startBannerIdle(text, destY_Text);
+        //this.startBannerIdle(this.bannerBg, destY_Bg);
+        //this.startBannerIdle(text, destY_Text);
     }
-    startBannerIdle(target: Phaser.GameObjects.Image, originalY: number) {
+    /*startBannerIdle(target: Phaser.GameObjects.Image, originalY: number) {
         this.tweens.add({
             targets: target,
             y: originalY + 5, 
@@ -196,6 +196,7 @@ export default class Scene1 extends Phaser.Scene {
             ease: 'Sine.easeInOut' // Chuyển động mượt như sóng
         });
     }
+        */
 
     createLeftPanel() { 
 
