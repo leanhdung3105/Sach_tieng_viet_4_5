@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import AudioManager from '../audio/AudioManager';
-import { setGameSceneReference, resetVoiceState } from '../rotateOrientation';
+import { setGameSceneReference, resetVoiceState, playVoiceLocked } from '../rotateOrientation';
 
 export default class Scene2 extends Phaser.Scene {
     // Biến vẽ
@@ -151,7 +151,7 @@ export default class Scene2 extends Phaser.Scene {
         this.isIntroActive = true; // BẬT CỜ LÊN
 
         // 1. Đọc Voice
-        AudioManager.play('voice_intro_s2');
+        playVoiceLocked(null, 'voice_intro_s2');
 
         // 2. Chờ voice đọc gần xong (ví dụ 1s) thì bắt đầu diễn
         this.time.delayedCall(1000, () => {

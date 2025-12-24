@@ -112,17 +112,15 @@ export default class Scene1 extends Phaser.Scene {
             // --- 1. KHÓA ĐẾM GIỜ LÚC BẮT ĐẦU ---
             this.canCheckIdle = false;
             this.isGameActive = true;
-            // Phát voice hướng dẫn + câu đố
-            // Logic: Đọc hướng dẫn trước -> Hết hướng dẫn thì đọc câu đố (nếu muốn tách)
-            // Ở đây mình gọi instruction chung theo file bạn có
             playVoiceLocked(null, 'instruction'); 
             
             const instructionTime = this.getSoundDuration('instruction');
 
             // Chờ đọc xong hướng dẫn (+ thêm 0.5s nghỉ) thì mới đọc câu đố
-            this.time.delayedCall((instructionTime + 1) * 1000, () => {
+            this.time.delayedCall((instructionTime + 2) * 1000, () => {
                 if (this.isGameActive) {
-                    AudioManager.play('cau_do');
+                    //AudioManager.play('cau_do');
+                    playVoiceLocked(null, 'cau_do');
                     const riddleDuration = this.getSoundDuration('cau_do');
 
                     // Đợi đọc XONG mới bắt đầu

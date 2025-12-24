@@ -11,7 +11,9 @@ let globalBlockListenersAttached = false;
 
 let lastRotateVoiceTime = 0;
 const ROTATE_VOICE_COOLDOWN = 1500; // ms – 1.5s
-let instructionVoiceStoppedByRotate = false;
+//let instructionVoiceStoppedByRotate = false;
+let interruptedVoiceKey: string | null = null;
+
 // ================== CẤU HÌNH CỐ ĐỊNH (DÙNG CHUNG) ==================
 type RotateConfig = {
     breakpoint: number; // max width để coi là màn nhỏ (mobile)
@@ -66,10 +68,15 @@ export function playVoiceLocked(
         if (now - lastRotateVoiceTime < ROTATE_VOICE_COOLDOWN) {
             return;
         }
-        // Nếu instruction đang phát thì đánh dấu đã dừng bởi rotate
-        if (currentVoiceKey === 'instruction') {
-             instructionVoiceStoppedByRotate = true;
-        }
+        if (currentVoiceKey === 'instruction' || 
+        currentVoiceKey === 'cau_do' || 
+        currentVoiceKey === 'voice_intro_s2') {
+            
+        interruptedVoiceKey = currentVoiceKey; // <--- LƯU LẠI TÊN NÓ
+    }
+    // ------------------------------------------
+
+    lastRotateVoiceTime = now;
         lastRotateVoiceTime = now;
 
         try {
@@ -105,15 +112,15 @@ export function playVoiceLocked(
     const curPri = currentVoiceKey ? getVoicePriority(currentVoiceKey) : 0;
 
     if (currentVoiceKey === key) return; // tránh spam cùng key
-    if (currentVoiceKey && curPri >= newPri) return; // không cho voice ưu tiên thấp đè
+    if (currentVoiceKey && curPri > newPri) return; // không cho voice ưu tiên thấp đè
 
     if (currentVoiceKey) {
         AudioManager.stop(currentVoiceKey);
         currentVoiceKey = null;
     }
 
-    if (key === 'instruction') {
-        instructionVoiceStoppedByRotate = false;
+    if (key === 'instruction' || key === 'cau_do' || key === 'voice_intro_s2') {
+        interruptedVoiceKey = null; // Reset nếu nó được chạy mới đàng hoàng
     }
 
     const id = AudioManager.play(key);
@@ -242,23 +249,31 @@ function updateRotateHint() {
     }
 
     // === Khi overlay TẮT (xoay ngang lại) ===
+    // Trong hàm updateRotateHint
+
+// === Khi overlay TẮT (xoay ngang lại) ===
     if (overlayTurnedOff) {
         if (currentVoiceKey === 'voice-rotate') {
             AudioManager.stop('voice-rotate');
             currentVoiceKey = null;
         }
-        // --- LOGIC PHỤC HỒI INSTRUCTION ---
-        if (instructionVoiceStoppedByRotate) {
-            const shouldRestoreInstruction = 
-                gameSceneReference && 
-                !gameSceneReference.isInstructionCompleted;
-            if (shouldRestoreInstruction) {
-                 console.log('[Rotate] Phục hồi giọng nói hướng dẫn.');
-                 playVoiceLocked(null as any, 'instruction'); 
-             }
-             instructionVoiceStoppedByRotate = false; // Reset cờ
+
+    // --- LOGIC PHỤC HỒI MỚI ---
+        if (interruptedVoiceKey) {
+            console.log(`[Rotate] Phục hồi voice bị ngắt: ${interruptedVoiceKey}`);
+            
+            // Xử lý đặc biệt cho Scene 2 (cần chạy lại cả Intro chứ không chỉ Voice)
+            if (interruptedVoiceKey === 'voice_intro_s2' && gameSceneReference.restartIntro) {
+                gameSceneReference.restartIntro(); 
+            } 
+            // Xử lý cho Scene 1 (Chỉ cần đọc lại voice là đủ)
+            else {
+                playVoiceLocked(null, interruptedVoiceKey);
+            }
+            
+            interruptedVoiceKey = null; // Xài xong rồi thì xóa đi
         }
-    }
+}
 
 }
 
@@ -284,7 +299,7 @@ export function initRotateOrientation(_game: Phaser.Game) {
 
 export function resetVoiceState() { // <--- THÊM HÀM NÀY
     currentVoiceKey = null;
-    instructionVoiceStoppedByRotate = false;
+    interruptedVoiceKey = null;
 }
 
 export function setGameSceneReference(scene: any) {
