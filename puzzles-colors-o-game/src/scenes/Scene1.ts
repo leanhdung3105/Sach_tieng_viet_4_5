@@ -168,7 +168,6 @@ export default class Scene1 extends Phaser.Scene {
 
     createBanner() {
         const destY_Bg = this.pctY(0.01);
-        const destY_Text = this.pctY(0.038);
 
         // --- 1. ĐẶT LUÔN TẠI VỊ TRÍ ĐÍCH (Không rơi nữa) ---
         this.bannerBg = this.add.image(
@@ -176,12 +175,12 @@ export default class Scene1 extends Phaser.Scene {
             destY_Bg, // Đặt thẳng vào vị trí y chuẩn
             'banner_bg'
         ).setOrigin(0.5, 0).setScale(0.7);
-        
+        const destY_Text = destY_Bg + this.bannerBg.displayHeight/2;
         const text = this.add.image(
             this.pctX(0.5), 
             destY_Text, // Đặt thẳng vào vị trí y chuẩn
             'banner_text'
-        ).setOrigin(0.5, 0).setScale(0.7);
+        ).setScale(0.7);
 
         //this.startBannerIdle(this.bannerBg, destY_Bg);
         //this.startBannerIdle(text, destY_Text);

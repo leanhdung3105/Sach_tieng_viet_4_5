@@ -275,9 +275,10 @@ export default class Scene2 extends Phaser.Scene {
 
     private creatBroadAndBanner() {
         const bannerS2 = this.add.image(this.pctX(0.5), this.pctY(0.01), 'banner_s2').setOrigin(0.5,0).setScale(0.7);
-        this.add.image(this.pctX(0.5), this.pctY(0.04), 'text_banner_s2').setOrigin(0.5,0).setScale(0.7);
-        this.add.image(this.pctX(0.5), bannerS2.displayHeight + this.pctY(0.03),'board_s2').setOrigin(0.5,0).setScale(0.7);
 
+        const centerY_text = this.pctY(0.01) + bannerS2.displayHeight/2;
+        this.add.image(this.pctX(0.5), centerY_text, 'text_banner_s2').setScale(0.7);
+        this.add.image(this.pctX(0.5), bannerS2.displayHeight + this.pctY(0.03),'board_s2').setOrigin(0.5,0).setScale(0.7);
     }
 
     private createPalette() {
